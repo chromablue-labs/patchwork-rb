@@ -91,9 +91,10 @@ If you decode several formats that share a delimiter, try the prefixed ones firs
 
 ```ruby
 # config/routes.rb
-post "patchwork/mint",    to: "patchwork#mint"
-get  "patchwork/jwks",    to: "patchwork#jwks"
-post "patchwork/webhook", to: "patchwork#webhook"
+post "patchwork/mint",    to: "patchwork#mint"      # section 3
+get  "patchwork/jwks",    to: "patchwork#jwks"      # section 3
+post "patchwork/up",      to: "patchwork#up"        # section 5
+post "patchwork/webhook", to: "patchwork#webhook"   # section 6
 ```
 
 `mint` has two callers on one URL, and the signature tells them apart. Your frontend asks for a token for the signed-in user; Patchwork asks, server to server, for a token for a subject it already acts for — that covers relay connections and **every Playground run**. Patchwork's call is a signed `POST` carrying `{"subject": "..."}` and expects a bare `{ token, expires_in }` back. The [Session tokens guide](https://docs.usepatchwork.co/guides/session-tokens) has the wire format, and the [Mint endpoint guide](https://docs.usepatchwork.co/guides/mint-endpoint) covers both branches.
@@ -248,11 +249,13 @@ Rails.application.config.middleware.use Patchwork::Gateway,
 
 Use a cache that every app process shares. A per-process cache only stops replays that land on the same process.
 
-## 5. Health check
+## 5. Verify the connection
 
-The gateway answers `POST /patchwork/up` (also when it's mounted under a prefix) with a proof that only the shared secret can produce. That's how **Test** on a connection in the Patchwork console reports **verified** rather than just reachable.
+Patchwork POSTs a nonce to `/patchwork/up` and expects back a proof only your request secret can compute. Answering it is what makes **Test** on a connection report **verified** instead of merely **reachable**.
 
-Without the gateway, it is another action on the same controller. Route `post "patchwork/up", to: "patchwork#up"`:
+The path is fixed, and resolved against the connection's `base_url`. If `base_url` is `https://api.acme.com`, Patchwork probes `https://api.acme.com/patchwork/up`.
+
+The gateway answers it, including when mounted under a prefix. Without the gateway, it is another action on the same controller:
 
 ```ruby
 def up
@@ -262,7 +265,22 @@ rescue Patchwork::HealthCheck::BadRequest
 end
 ```
 
-Pass `health_check: false` if you want to own the route while still using the gateway for tool calls.
+Pass `health_check: false` to own the route while still using the gateway for tool calls.
+
+Leave the route unauthenticated. The proof is domain-separated from request signatures, so answering an unsigned probe cannot help anyone forge one.
+
+| Test says | Means |
+| --- | --- |
+| **verified** | The proof matched your request secret. The only result that confirms the secret itself. |
+| **reachable** | Something answered, but the proof was missing or wrong — or the connection's auth mode is not `minted`, which is the only mode that can be cryptographically verified. |
+| **unreachable** | Nothing answered. |
+
+Two things produce **reachable** when you expect **verified**:
+
+- **A redirect.** Patchwork does not follow it, because the signature covers the original path. Point `base_url` at the final URL, and check https, `www`, and the trailing slash.
+- **A 404**, which means `base_url` is not your API root.
+
+Rotation does not break this. Your proof is computed with your current request secret, and Patchwork accepts a proof computed with either its current or its previous one — so `/patchwork/up` keeps reporting verified on both sides of a rotation.
 
 ## 6. Verify webhooks
 
@@ -299,7 +317,9 @@ end
 
 ## 7. Rotating secrets and keys
 
-**Request secret:** set the new value as `request_secret` and the old one as `previous_request_secret`. Deploy, update the connection in Patchwork, then remove the previous value.
+**Request secret:** Patchwork generates this one, so you copy it rather than choose it. Rotate it in your workspace settings, set the new value as `request_secret`, move the value it replaced to `previous_request_secret`, and deploy.
+
+Do the rotation and the deploy together. Patchwork starts signing with the new secret the moment you rotate, so a consumer still holding only the old one will refuse tool calls. `previous_request_secret` exists to cover requests that were already signed with the old secret, not to give you a long overlap. Drop it on your next deploy.
 
 **Signing key:** serve both public keys from your JWKS, and switch `signing_key` once Patchwork has fetched the new set. Never remove the old key first. With `signing_kid` unset, each key's `kid` is its thumbprint, so the two can't collide. To serve more than one key, build the document yourself from `Patchwork::SigningKey.public_jwk` plus the previous one.
 
