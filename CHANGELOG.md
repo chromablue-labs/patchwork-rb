@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 — 2026-10-03
+
+Documentation. No code changes.
+
+- `/patchwork/up` is documented as a required step and included in the routes example, which previously left it out. Without that route a connection can never report verified.
+- The connection check now covers what **verified**, **reachable** and **unreachable** each mean, that the path is fixed and resolved against the connection's `base_url`, that only a `minted` connection can be cryptographically verified, and that a redirect or a 404 is what usually produces *reachable* when *verified* was expected.
+- Corrected the request secret rotation order. Patchwork generates that secret and starts signing with the new one as soon as it is rotated, so the rotation and the deploy go together; `previous_request_secret` covers requests already signed with the old secret.
+
 ## 0.1.1 — 2026-10-03
 
 Packaging and documentation. No code changes.
