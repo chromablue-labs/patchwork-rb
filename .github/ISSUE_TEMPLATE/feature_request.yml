@@ -1,0 +1,23 @@
+name: Feature request
+description: Something the gem should do and does not.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The integration problem, not the proposed API.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you do today
+      description: The code you write by hand instead, if any.
+      render: ruby
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Optional.
+      render: ruby

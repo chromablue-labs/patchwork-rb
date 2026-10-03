@@ -1,0 +1,49 @@
+name: Bug report
+description: Something the gem does that it should not, or the reverse.
+labels: [bug]
+body:
+  - type: input
+    id: gem_version
+    attributes:
+      label: patchwork-rb version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: ruby_version
+    attributes:
+      label: Ruby version
+      placeholder: "ruby -v"
+    validations:
+      required: true
+  - type: input
+    id: stack
+    attributes:
+      label: Rack, Rails or Sinatra version
+      description: Which, and what version. Say "none" if you use the primitives directly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Include the error class and message, and a backtrace if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Code that reproduces it
+      description: >
+        Smallest version that fails. Redact keys and secrets — a generated
+        OpenSSL::PKey::RSA.new(2048) and a dummy secret are enough to reproduce
+        anything in this gem.
+      render: ruby
+    validations:
+      required: true

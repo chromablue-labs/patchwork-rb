@@ -1,0 +1,58 @@
+[
+  {
+    "secret": "whsec_test",
+    "timestamp": 1759000000,
+    "method": "POST",
+    "path": "/hooks",
+    "body": "{\"a\":1}",
+    "signature": "c61eef3355cfc35a029ce5d8d45c919679fabecc12ce72ed21d631d4bbd90d73"
+  },
+  {
+    "secret": "whsec_test",
+    "timestamp": 1759000000,
+    "method": "post",
+    "path": "/hooks",
+    "body": "{\"a\":1}",
+    "signature": "c61eef3355cfc35a029ce5d8d45c919679fabecc12ce72ed21d631d4bbd90d73"
+  },
+  {
+    "secret": "s3cr3t",
+    "timestamp": 1,
+    "method": "GET",
+    "path": "/",
+    "body": "",
+    "signature": "926ac3a2f4259bffafd02cbb02783d43419afbe159b47f3dc18a4c493bf49322"
+  },
+  {
+    "secret": "s3cr3t",
+    "timestamp": 1759000123,
+    "method": "DELETE",
+    "path": "/a/b/c",
+    "body": "null",
+    "signature": "2c97e414d922c7b2a2ae6b580336041e9b07dbfb6f3e2e44489383fa38a3488c"
+  },
+  {
+    "secret": "pwwh_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "timestamp": 1759009999,
+    "method": "PUT",
+    "path": "/x?y=1",
+    "body": "{\"nested\":{\"k\":[1,2,3]}}",
+    "signature": "45291e4a8f0df4b6e0e7827d985477e6fe3d6b6b509ad402a7f3df8fef40f0ce"
+  },
+  {
+    "secret": "unicode",
+    "timestamp": 1759000000,
+    "method": "POST",
+    "path": "/é",
+    "body": "{\"n\":\"éè\"}",
+    "signature": "44f171f7ed62ebbe984a699e2f18ef033aecf84b3c2acb632b8224433f9dadfa"
+  },
+  {
+    "secret": "emptybody",
+    "timestamp": 1759000000,
+    "method": "POST",
+    "path": "/hooks",
+    "body": "",
+    "signature": "fbe1a323f6fee1c637bb24e0cc3bb591e75d3a51f4156015771efca91411f746"
+  }
+]

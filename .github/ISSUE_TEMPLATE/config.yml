@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://docs.usepatchwork.co
+    about: Guides for the API, signing, subjects and session tokens.
+  - name: Report a security vulnerability
+    url: https://github.com/chromablue-labs/patchwork-rb/security/advisories/new
+    about: Report it privately. Do not open a public issue.
