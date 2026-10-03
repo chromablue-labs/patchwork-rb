@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-10-03
+
+Packaging and documentation. No code changes.
+
+- `documentation_uri`, `source_code_uri`, `bug_tracker_uri` and `changelog_uri` resolve. The 0.1.0 links pointed into a repository that is not public.
+- README: the Patchwork endpoints are shown as named actions on one controller, with links to the platform guides.
+
 ## 0.1.0 — 2026-10-02
 
 First release. Mint the session tokens your frontend presents to Patchwork, verify the tool calls Patchwork makes to your backend, and verify webhook deliveries.
