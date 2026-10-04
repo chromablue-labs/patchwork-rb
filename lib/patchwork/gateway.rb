@@ -32,17 +32,20 @@ module Patchwork
     TooLarge = Class.new(Error)
 
     def initialize(app, resolve:, subject: nil, mint_path: nil, health_check: true,
-                   max_body_bytes: MAX_BODY_BYTES, replay_guard: nil)
+                   health_path: HealthCheck::PATH, max_body_bytes: MAX_BODY_BYTES,
+                   replay_guard: nil)
       raise ArgumentError, "resolve must respond to #call" unless resolve.respond_to?(:call)
       raise ArgumentError, "subject must respond to #decode" if subject && !subject.respond_to?(:decode)
       raise ArgumentError, "replay_guard must respond to #call" if replay_guard && !replay_guard.respond_to?(:call)
       raise ArgumentError, "mint_path must be an absolute path" if mint_path && !mint_path.to_s.start_with?("/")
+      raise ArgumentError, "health_path must be an absolute path" unless health_path.to_s.start_with?("/")
 
       @app = app
       @resolve = resolve
       @subject = subject
       @mint_path = mint_path&.to_s
       @health_check = health_check
+      @health_path = health_path.to_s
       @max_body_bytes = Integer(max_body_bytes)
       @replay_guard = replay_guard
     end
@@ -55,7 +58,7 @@ module Patchwork
       request = Rack::Request.new(env)
       signature = env[SIGNATURE_HEADER].to_s
 
-      return health(request, signature) if @health_check && at?(request, HealthCheck::PATH) && request.post?
+      return health(request, signature) if @health_check && at?(request, @health_path) && request.post?
       return @app.call(env) if signature.empty?
       return relay_mint(request, signature) if @mint_path && at?(request, @mint_path) && request.post?
 

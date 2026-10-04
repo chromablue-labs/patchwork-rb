@@ -202,6 +202,73 @@ class GatewayTest < Minitest::Test
     assert_equal 401, last_response.status
   end
 
+  NAMESPACED = "/api/v2/patchwork/up".freeze
+
+  def health_signature(path:, secret: "whsec_current", body: nil)
+    Patchwork::Signature.header(
+      secrets: [ secret ], timestamp: Time.now.to_i, method: "POST", path: path, body: body
+    )
+  end
+
+  def test_the_health_endpoint_can_live_under_a_namespace
+    @options[:health_path] = NAMESPACED
+    body = JSON.generate("nonce" => "n0nce")
+
+    header "Patchwork-Signature", health_signature(path: NAMESPACED, body: body)
+    post NAMESPACED, body
+
+    assert_equal 200, last_response.status
+    assert_equal Patchwork::HealthCheck.proof(secret: "whsec_current", nonce: "n0nce"),
+                 JSON.parse(last_response.body)["proof"]
+    assert_equal 0, @downstream_hits
+  end
+
+  # The signed path is the one Patchwork sent, never the configured one. A
+  # middleware that strips the namespace instead of moving it into SCRIPT_NAME
+  # would sign over "/patchwork/up" and must be refused.
+  def test_a_namespaced_health_endpoint_verifies_over_the_path_patchwork_signed
+    @options[:health_path] = NAMESPACED
+    body = JSON.generate("nonce" => "n0nce")
+
+    header "Patchwork-Signature", health_signature(path: Patchwork::HealthCheck::PATH, body: body)
+    post NAMESPACED, body
+
+    assert_equal 401, last_response.status
+    assert_equal 0, @downstream_hits
+  end
+
+  def test_configuring_a_namespace_stops_the_default_path_answering
+    @options[:health_path] = NAMESPACED
+
+    post Patchwork::HealthCheck::PATH, JSON.generate("nonce" => "n0nce")
+
+    assert_equal 1, @downstream_hits, "an unclaimed path belongs to the app"
+  end
+
+  def test_the_health_endpoint_answers_when_mounted_under_a_script_name
+    body = JSON.generate("nonce" => "n0nce")
+    env = Rack::MockRequest.env_for(
+      NAMESPACED,
+      method: "POST",
+      input: body,
+      "SCRIPT_NAME" => "/api/v2",
+      "PATH_INFO" => "/patchwork/up",
+      "HTTP_PATCHWORK_SIGNATURE" => health_signature(path: NAMESPACED, body: body)
+    )
+
+    status, _headers, response = app.call(env)
+
+    assert_equal 200, status
+    assert_equal Patchwork::HealthCheck.proof(secret: "whsec_current", nonce: "n0nce"),
+                 JSON.parse(response.first)["proof"]
+  end
+
+  def test_health_path_must_be_absolute
+    assert_raises(ArgumentError) do
+      Patchwork::Gateway.new(->(_env) {}, resolve: ->(_s) { true }, health_path: "patchwork/up")
+    end
+  end
+
   def test_the_health_endpoint_can_be_turned_off
     @options[:health_check] = false
 

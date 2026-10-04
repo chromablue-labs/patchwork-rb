@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 — 2026-10-04
+
+### Added
+
+- **`Patchwork::Gateway` takes `health_path:`.** The connection check was only ever matched at `/patchwork/up`, so an app whose routes live under a prefix — `/api/v2/patchwork/up` — had to strip that prefix in a middleware ahead of the gateway. Pass the full path instead. `mint_path:` already worked this way.
+
+Stripping a prefix ahead of the gateway is worth avoiding either way: the signature is verified over the path the request arrived on, because that is the path Patchwork signed. A stripped path makes a signed probe 401, which shows up as *reachable* rather than as an error.
+
+### Documentation
+
+- `base_url` may carry a path prefix, what that means for the signed path, and why `map "/api/v2"` is enough in bare Rack but not in Rails.
+
 ## 0.1.2 — 2026-10-03
 
 Documentation. No code changes.
