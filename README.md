@@ -32,6 +32,7 @@ end
 | `audience` | minting, tool calls | No default. Tokens carry `["patchwork", audience]`, and tool calls are verified against it. |
 | `request_secret` | tool calls, health check | Set `previous_request_secret` during a rotation. |
 | `signing_kid` | optional | Defaults to the key's RFC 7638 thumbprint, so a new key gets a new `kid` automatically. |
+| `connection_id` | optional | Set it when the agent has unpinned customer tools. A connection UUID, not a name. Minted tokens carry it as `conn`, including the ones the relay mint and the gateway issue. |
 | `token_ttl` | optional | Seconds. Defaults to 120. The browser remints as needed. |
 | `max_token_lifetime` | optional | Seconds. Defaults to 900. Verification refuses a token whose own `exp - iat` is longer, so a good signature over an absurd expiry is still rejected. `nil` turns the check off. |
 
@@ -137,9 +138,9 @@ end
 
 Build the subject from server state, never from request params. On the direct branch that is the whole of your authorisation.
 
-`Mint.relay` mints for exactly the subject Patchwork sent, never a default, and verifies the signature before it reads the subject at all. Pass `connection_id:` to `issue` when the agent has unpinned customer tools; it takes a connection UUID, not a name.
+Set `connection_id` in your configuration when the agent has unpinned customer tools, and every minted token carries it — the direct branch, the relay branch, and the gateway. `issue` also takes `connection_id:` for a one-off. It is a connection UUID, not a name.
 
-`jwks` publishes the public half of your signing key, so Patchwork can verify what you minted. Set its URL on your workspace.
+`Mint.relay` mints for exactly the subject Patchwork sent, never a default, and verifies the signature before it reads the subject at all. `jwks` publishes the public half of your signing key, so Patchwork can verify what you minted. Set its URL on your workspace.
 
 If you mount the gateway in section 4, `mint_path: "/patchwork/mint"` makes it answer the relay call before your controller sees it, and you can drop `relay_mint`. Your frontend's unsigned request still reaches `mint`.
 

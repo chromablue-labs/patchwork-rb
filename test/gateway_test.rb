@@ -269,6 +269,46 @@ class GatewayTest < Minitest::Test
     end
   end
 
+  MINT_PATH = "/patchwork/mint".freeze
+
+  def mint_through_gateway(subject: "usr_1:ws_1")
+    @options[:mint_path] = MINT_PATH
+    body = JSON.generate("subject" => subject)
+
+    header "Patchwork-Signature", Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: MINT_PATH, body: body
+    )
+    post MINT_PATH, body
+  end
+
+  def test_the_gateway_answers_the_relay_mint
+    mint_through_gateway
+
+    assert_equal 201, last_response.status
+    parsed = JSON.parse(last_response.body)
+    claims = JWT.decode(parsed["token"], TEST_RSA_KEY.public_key, true, algorithms: [ "RS256" ]).first
+    assert_equal "usr_1:ws_1", claims["sub"]
+    assert_equal 0, @downstream_hits
+  end
+
+  def test_the_relay_mint_stamps_the_configured_connection
+    configure_patchwork(connection_id: "conn-abc")
+    mint_through_gateway
+
+    assert_equal 201, last_response.status
+    parsed = JSON.parse(last_response.body)
+    claims = JWT.decode(parsed["token"], TEST_RSA_KEY.public_key, true, algorithms: [ "RS256" ]).first
+    assert_equal "conn-abc", claims["conn"]
+  end
+
+  def test_an_unsigned_mint_falls_through_to_the_app
+    @options[:mint_path] = MINT_PATH
+
+    post MINT_PATH, JSON.generate("subject" => "usr_1:ws_1")
+
+    assert_equal 1, @downstream_hits, "the consumer's own frontend mint is not the gateway's"
+  end
+
   def test_the_health_endpoint_can_be_turned_off
     @options[:health_check] = false
 

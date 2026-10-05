@@ -16,11 +16,13 @@ module Patchwork
     # Verifies the presenter signature, then mints for exactly the subject in
     # the body — never a default, never a widened one. Raises InvalidSignature,
     # StaleSignature or BadRequest.
-    def self.relay(body:, signature:, path:, secrets: Patchwork.config.request_secrets)
+    def self.relay(body:, signature:, path:, secrets: Patchwork.config.request_secrets,
+                   connection_id: Patchwork.config.connection_id)
       raise BadRequest, "mint body too large" if body.to_s.bytesize > MAX_BODY_BYTES
 
       Signature.verify!(secrets: secrets, header: signature, method: "POST", path: path, body: body)
-      { token: SessionToken.issue(subject: relay_subject(body)), expires_in: Patchwork.config.token_ttl }
+      token = SessionToken.issue(subject: relay_subject(body), connection_id: connection_id)
+      { token: token, expires_in: Patchwork.config.token_ttl }
     end
 
     def self.relay_subject(body)

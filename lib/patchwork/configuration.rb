@@ -10,7 +10,7 @@ module Patchwork
     #                and the one it replaced while a rotation is in flight.
     attr_accessor :signing_key, :signing_kid, :issuer, :audience,
                   :request_secret, :previous_request_secret, :token_ttl,
-                  :max_token_lifetime
+                  :max_token_lifetime, :connection_id
 
     DEFAULT_TTL = 120
     DEFAULT_MAX_TOKEN_LIFETIME = 900
@@ -45,7 +45,7 @@ module Patchwork
     # Default #inspect prints every ivar, so a config that reaches a log line,
     # an error tracker or a console would carry the private key with it.
     def inspect
-      fields = %i[issuer audience signing_kid token_ttl max_token_lifetime].map { |name| "#{name}=#{public_send(name).inspect}" }
+      fields = %i[issuer audience signing_kid connection_id token_ttl max_token_lifetime].map { |name| "#{name}=#{public_send(name).inspect}" }
       fields += SECRETS.map { |name| "#{name}=#{public_send(name).to_s.empty? ? 'nil' : '[REDACTED]'}" }
       "#<Patchwork::Configuration #{fields.join(', ')}>"
     end

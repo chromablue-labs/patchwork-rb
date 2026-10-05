@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.4 — 2026-10-05
+
+### Added
+
+- **`connection_id` is configuration.** Set it once in `Patchwork.configure` and every minted token carries it as `conn` — including the tokens `Mint.relay` and the gateway's `mint_path` issue. `Mint.relay` also takes `connection_id:` for a one-off.
+
+Before this, neither the relay mint nor the gateway could stamp `conn` at all. An agent with unpinned customer tools could not use either, and had to assemble the mint from `Signature.verify!`, `Mint.relay_subject` and `SessionToken.issue` by hand.
+
+### Tests
+
+- The relay mint now has its own suite, and the gateway's `mint_path` is covered for the first time.
+
 ## 0.1.3 — 2026-10-04
 
 ### Added

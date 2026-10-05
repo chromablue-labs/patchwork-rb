@@ -97,7 +97,8 @@ module Patchwork
     def relay_mint(request, signature)
       body = verify_signature!(request, signature, limit: MAX_CONTROL_BODY_BYTES)
       subject = Mint.relay_subject(body)
-      json(201, { token: SessionToken.issue(subject: subject), expires_in: Patchwork.config.token_ttl })
+      token = SessionToken.issue(subject: subject, connection_id: Patchwork.config.connection_id)
+      json(201, { token: token, expires_in: Patchwork.config.token_ttl })
     rescue Mint::BadRequest => e
       json(400, { error: e.message })
     end
