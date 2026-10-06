@@ -6,39 +6,58 @@ module Patchwork
     SKEW = 300
     HEADER = "Patchwork-Signature".freeze
 
-    # Patchwork sends one v1 per live secret — two during a rotation. The cap
-    # stops an unauthenticated header of thousands of candidates from turning
-    # verification into a CPU amplifier.
+    # Patchwork sends one value per live secret per label — two during a
+    # rotation. The cap stops an unauthenticated header of thousands of
+    # candidates from turning verification into a CPU amplifier.
     MAX_SIGNATURES = 8
     MAX_HEADER_BYTES = 1024
     TIMESTAMP = /\A\d{1,12}\z/
     HEX_SHA256 = /\A\h{64}\z/
 
+    # v1 covers the method, the path and the body. v2 covers the same with the
+    # query string, as sent. Its payload carries a "v2." prefix, so a v1
+    # signature can never read as a v2 one even where the two cover the same
+    # bytes — a request with no query.
+    V1 = "v1".freeze
+    V2 = "v2".freeze
+    LABELS = [ V1, V2 ].freeze
+
     Parsed = Struct.new(:timestamp, :signatures, keyword_init: true)
 
-    def self.sign(secret:, timestamp:, method:, path:, body:)
+    def self.sign(secret:, timestamp:, method:, path:, body:, query: nil, label: V1)
       secret = usable!([ secret ]).first
-      mac(secret, payload(timestamp, method, path, digest(body)))
+      mac(secret, payload(label, timestamp, method, path, query, digest(body)))
     end
 
-    def self.header(secrets:, timestamp:, method:, path:, body:)
-      base = payload(timestamp, method, path, digest(body))
-      signatures = usable!(secrets).map { |secret| mac(secret, base) }
-      "t=#{timestamp},#{signatures.map { |signature| "v1=#{signature}" }.join(",")}"
+    def self.header(secrets:, timestamp:, method:, path:, body:, query: nil, labels: nil)
+      labels = (labels || (query.nil? ? [ V1 ] : LABELS)).map(&:to_s)
+      usable = usable!(secrets)
+
+      values = labels.flat_map do |label|
+        base = payload(label, timestamp, method, path, query, digest(body))
+        usable.map { |secret| "#{label}=#{mac(secret, base)}" }
+      end
+
+      "t=#{timestamp},#{values.join(",")}"
     end
 
     # Structural parse, with no secret and no body. Returns nil for anything
     # Patchwork would never send, so a malformed header is rejected before the
-    # body is read.
+    # body is read. Unknown labels are ignored rather than refused, so an older
+    # reader keeps working when a new one is added.
     def self.parse(header)
       value = header.to_s
       return nil if value.empty? || value.bytesize > MAX_HEADER_BYTES
 
       pairs = value.split(",").map { |pair| pair.strip.split("=", 2) }
       timestamps = pairs.select { |key, _| key == "t" }.map(&:last)
-      signatures = pairs.select { |key, _| key == "v1" }.map(&:last)
       return nil unless timestamps.size == 1 && TIMESTAMP.match?(timestamps.first.to_s)
-      return nil if signatures.empty? || signatures.size > MAX_SIGNATURES
+
+      signatures = LABELS.to_h do |label|
+        [ label, pairs.select { |key, _| key == label }.map(&:last) ]
+      end
+      return nil if signatures.values.all?(&:empty?)
+      return nil if signatures.values.any? { |values| values.size > MAX_SIGNATURES }
 
       Parsed.new(timestamp: Integer(timestamps.first, 10), signatures: signatures)
     end
@@ -47,24 +66,33 @@ module Patchwork
       (now - parsed.timestamp).abs <= skew
     end
 
-    def self.verify(secrets:, header:, method:, path:, body:, skew: SKEW, now: Time.now.to_i)
+    # Accepts either label. During the migration Patchwork sends both, so a
+    # reader that understands v2 must still accept v1 from a platform that has
+    # not started sending it.
+    def self.verify(secrets:, header:, method:, path:, body:, query: nil, skew: SKEW, now: Time.now.to_i)
       secrets = usable!(secrets)
       parsed = parse(header)
       return :bad if parsed.nil?
       return :stale unless fresh?(parsed, skew: skew, now: now)
 
-      # The body is hashed once and each secret MACs once, however many
-      # candidates the header carries.
-      base = payload(parsed.timestamp, method, path, digest(body))
-      expected = secrets.map { |secret| mac(secret, base) }
-      candidates = parsed.signatures.select { |candidate| HEX_SHA256.match?(candidate) }
+      # The body is hashed once however many candidates the header carries.
+      body_digest = digest(body)
 
-      matched = expected.product(candidates).any? { |mine, theirs| secure_compare(mine, theirs) }
+      matched = LABELS.any? do |label|
+        candidates = parsed.signatures.fetch(label, []).select { |value| HEX_SHA256.match?(value) }
+        next false if candidates.empty?
+
+        base = payload(label, parsed.timestamp, method, path, query, body_digest)
+        expected = secrets.map { |secret| mac(secret, base) }
+        expected.product(candidates).any? { |mine, theirs| secure_compare(mine, theirs) }
+      end
+
       matched ? :ok : :bad
     end
 
-    def self.verify!(secrets:, header:, method:, path:, body:, skew: SKEW, now: Time.now.to_i)
-      case verify(secrets: secrets, header: header, method: method, path: path, body: body, skew: skew, now: now)
+    def self.verify!(secrets:, header:, method:, path:, body:, query: nil, skew: SKEW, now: Time.now.to_i)
+      case verify(secrets: secrets, header: header, method: method, path: path, body: body,
+                  query: query, skew: skew, now: now)
       when :stale then raise StaleSignature, "signature timestamp outside the #{skew}s window"
       when :bad then raise InvalidSignature, "signature did not match"
       else true
@@ -76,8 +104,20 @@ module Patchwork
     end
     private_class_method :digest
 
-    def self.payload(timestamp, method, path, digest)
-      "#{timestamp}.#{method.to_s.upcase}.#{path}.#{digest}"
+    # The request target: the path as signed by v1, and the path with the query
+    # exactly as sent by v2. No query means no "?", because that is what goes
+    # on the wire.
+    def self.target(label, path, query)
+      return path.to_s if label == V1
+
+      value = query.to_s
+      value.empty? ? path.to_s : "#{path}?#{value}"
+    end
+    private_class_method :target
+
+    def self.payload(label, timestamp, method, path, query, digest)
+      base = "#{timestamp}.#{method.to_s.upcase}.#{target(label, path, query)}.#{digest}"
+      label == V2 ? "#{V2}.#{base}" : base
     end
     private_class_method :payload
 

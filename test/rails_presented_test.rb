@@ -6,7 +6,9 @@ class RailsPresentedTest < Minitest::Test
 
   Membership = Patchwork::Subject.define(:user_id, :workspace_id)
 
-  FakeRequest = Struct.new(:request_method, :path, :raw_post, :headers, :env, keyword_init: true)
+  FakeRequest = Struct.new(:request_method, :path, :raw_post, :headers, :env, :query_string, keyword_init: true) do
+    def query_string = self[:query_string].to_s
+  end
 
   class FakeController
     def self.before_action(*names)

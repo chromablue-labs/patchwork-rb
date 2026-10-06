@@ -18,10 +18,11 @@ class SignatureTest < Minitest::Test
     VECTORS.each do |vector|
       actual = Patchwork::Signature.sign(
         secret: vector[:secret], timestamp: vector[:timestamp],
-        method: vector[:method], path: vector[:path], body: vector[:body]
+        method: vector[:method], path: vector[:path], query: vector[:query],
+        body: vector[:body], label: vector[:label]
       )
       assert_equal vector[:signature], actual,
-        "diverged on #{vector[:name]} (#{vector[:method]} #{vector[:path]})"
+        "diverged on #{vector[:label]} #{vector[:name]}"
     end
   end
 
@@ -29,8 +30,8 @@ class SignatureTest < Minitest::Test
     VERDICTS.each do |vector|
       actual = Patchwork::Signature.verify(
         secrets: vector[:secrets], header: vector[:header],
-        method: vector[:method], path: vector[:path], body: vector[:body],
-        now: vector[:now]
+        method: vector[:method], path: vector[:path], query: vector[:query],
+        body: vector[:body], now: vector[:now]
       )
       assert_equal vector[:expect].to_sym, actual, "diverged on #{vector[:name]}"
     end
@@ -38,6 +39,7 @@ class SignatureTest < Minitest::Test
 
   def test_method_case_does_not_change_the_signature
     lower = VECTORS.find { |v| v[:method] == "post" }
+    skip "no lowercase vector" if lower.nil?
     upper = VECTORS.find { |v| v[:method] == "POST" && v[:path] == lower[:path] && v[:body] == lower[:body] }
 
     assert_equal upper[:signature], lower[:signature]

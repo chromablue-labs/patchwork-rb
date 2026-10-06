@@ -32,6 +32,7 @@ module Patchwork
           header: signature,
           method: signed,
           path: request.path,
+          query: request.query_string,
           body: request.raw_post
         )
 

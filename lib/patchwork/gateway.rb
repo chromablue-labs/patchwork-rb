@@ -131,6 +131,7 @@ module Patchwork
         header: signature,
         method: method,
         path: request.path,
+        query: request.query_string,
         body: body
       )
       body

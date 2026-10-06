@@ -12,6 +12,7 @@
       "timestamp": 1759000000,
       "method": "POST",
       "path": "/hooks",
+      "query": null,
       "body": "{\"a\":1}",
       "signature": "c61eef3355cfc35a029ce5d8d45c919679fabecc12ce72ed21d631d4bbd90d73"
     },
@@ -22,6 +23,7 @@
       "timestamp": 1759000000,
       "method": "post",
       "path": "/hooks",
+      "query": null,
       "body": "{\"a\":1}",
       "signature": "c61eef3355cfc35a029ce5d8d45c919679fabecc12ce72ed21d631d4bbd90d73"
     },
@@ -32,6 +34,7 @@
       "timestamp": 1,
       "method": "GET",
       "path": "/",
+      "query": null,
       "body": "",
       "signature": "926ac3a2f4259bffafd02cbb02783d43419afbe159b47f3dc18a4c493bf49322"
     },
@@ -42,6 +45,7 @@
       "timestamp": 1759000123,
       "method": "DELETE",
       "path": "/a/b/c",
+      "query": null,
       "body": "null",
       "signature": "2c97e414d922c7b2a2ae6b580336041e9b07dbfb6f3e2e44489383fa38a3488c"
     },
@@ -52,6 +56,7 @@
       "timestamp": 1759009999,
       "method": "PUT",
       "path": "/x?y=1",
+      "query": null,
       "body": "{\"nested\":{\"k\":[1,2,3]}}",
       "signature": "45291e4a8f0df4b6e0e7827d985477e6fe3d6b6b509ad402a7f3df8fef40f0ce"
     },
@@ -62,6 +67,7 @@
       "timestamp": 1759000000,
       "method": "POST",
       "path": "/é",
+      "query": null,
       "body": "{\"n\":\"éè\"}",
       "signature": "44f171f7ed62ebbe984a699e2f18ef033aecf84b3c2acb632b8224433f9dadfa"
     },
@@ -72,8 +78,86 @@
       "timestamp": 1759000000,
       "method": "POST",
       "path": "/hooks",
+      "query": null,
       "body": "",
       "signature": "fbe1a323f6fee1c637bb24e0cc3bb591e75d3a51f4156015771efca91411f746"
+    },
+    {
+      "name": "a query, signed as sent",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "signature": "36972c816f082ec06499aba93b26c85586177f1000325a4efdb74e5c3b7acf0a"
+    },
+    {
+      "name": "the same parameters in another order are a different signature",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "limit=10&status=open",
+      "body": "",
+      "signature": "b61f363bfee79ca32e20304d749df44c953af50eadcb311c579a3830e9c0064b"
+    },
+    {
+      "name": "a repeated key keeps its order",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "a=1&a=2",
+      "body": "",
+      "signature": "255353264efcd489cae60783acd22bf2d5eacd857805d05d7562a54d8e41f26b"
+    },
+    {
+      "name": "percent-encoding is signed verbatim",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "q=a%20b",
+      "body": "",
+      "signature": "5c73897cf4f79b7348594430b1e7f209043a3cd4c6216981eed3c0cdbd264e98"
+    },
+    {
+      "name": "a space encoded as plus is a different signature",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "q=a+b",
+      "body": "",
+      "signature": "407fa29ebc487d407cff89c8ca1a1ae3e3a96c2a68bb0ca63ceccc2a38cb4a4a"
+    },
+    {
+      "name": "no query signs the bare path",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "",
+      "body": "",
+      "signature": "e5b8bb1fbdbbc447385a619e0f9aa41200875599fabf6ea2680ca08bd85f70f4"
+    },
+    {
+      "name": "a body and a query together",
+      "label": "v2",
+      "secret": "whsec_test",
+      "timestamp": 1759000000,
+      "method": "POST",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "{\"a\":1}",
+      "signature": "2b5d7c2edea872c30ee62928309d9bda5c2e2e8f2f3462cefb7d26fc7ab5ccd0"
     }
   ],
   "verify": [
@@ -85,6 +169,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "ok"
@@ -98,6 +183,7 @@
       "header": "t=1759000000,v1=21418c33a9bfde5cbf758de8bfab5afe81efdfe62c68cfe9f30583e6e210ebf6",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "ok"
@@ -111,6 +197,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=21418c33a9bfde5cbf758de8bfab5afe81efdfe62c68cfe9f30583e6e210ebf6",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "ok"
@@ -123,6 +210,7 @@
       "header": "t=1759000000,v1=23c56ed9d8da19b84f945784aa0e26ac71be454fd013668f93451cd969ee1dd3,v1=23c56ed9d8da19b84f945784aa0e26ac71be454fd013668f93451cd969ee1dd3",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -135,6 +223,7 @@
       "header": "t=1759000000,v1=23c56ed9d8da19b84f945784aa0e26ac71be454fd013668f93451cd969ee1dd3",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -147,6 +236,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":2}",
       "now": 1759000000,
       "expect": "bad"
@@ -159,6 +249,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "DELETE",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -171,6 +262,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/invoices",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -183,6 +275,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders/",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -195,6 +288,7 @@
       "header": "v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -207,6 +301,7 @@
       "header": "t=1759000000,t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -219,6 +314,7 @@
       "header": "t=abc,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -231,6 +327,7 @@
       "header": "t=1759000000",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -243,6 +340,7 @@
       "header": "",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -255,6 +353,7 @@
       "header": "t=1759000000,v1=not-a-signature",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -267,6 +366,7 @@
       "header": "t=1759000000,v1=5809431C4CC8C83858FD7C874A9259339AB505F77C80D903B4C1B010F829A815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -279,6 +379,7 @@
       "header": "t=1759000000,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815,v1=5809431c4cc8c83858fd7c874a9259339ab505f77c80d903b4c1b010f829a815",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -291,6 +392,7 @@
       "header": "t=1759000000,v1=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "bad"
@@ -303,6 +405,7 @@
       "header": "t=1758999700,v1=301177b4ea14af6a88778e07ecc0974529bbce81582f0647a7f68d0b3f095fdf",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "ok"
@@ -315,6 +418,7 @@
       "header": "t=1758999699,v1=22014ac3407d4d8b6a36c750bec4ea7b3187f3145d37a52efb35be190f253a13",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "stale"
@@ -327,9 +431,153 @@
       "header": "t=1759000301,v1=8a7c1c48f54a3d0259edc2211029bf5eb6c3a8a3c5dc0993cebd281db88a2f4e",
       "method": "POST",
       "path": "/tools/orders",
+      "query": null,
       "body": "{\"q\":1}",
       "now": 1759000000,
       "expect": "stale"
+    },
+    {
+      "name": "a v2 signature alone",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "ok"
+    },
+    {
+      "name": "both labels, both valid",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v1=d6e7f8fc22461f7fdb310ea06fe9efbe32e612724457e5483e972e6ee3898a60,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "ok"
+    },
+    {
+      "name": "v1 alone, from a platform not yet sending v2",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v1=d6e7f8fc22461f7fdb310ea06fe9efbe32e612724457e5483e972e6ee3898a60",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "ok"
+    },
+    {
+      "name": "v2 against a query that differs",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=closed&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "v2 against the same parameters reordered",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "limit=10&status=open",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "v2 against no query at all",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "a v2 value that is not hex",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=not-a-signature",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "more v2 values than the cap allows",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "an unknown label alone is not a signature",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v3=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "bad"
+    },
+    {
+      "name": "an unknown label beside a valid v2 is ignored",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v2=434395dd256d6d2c468dc7eb187392b976af1738e23f021a61da531cbfe6bc4a,v3=whatever",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=open&limit=10",
+      "body": "",
+      "now": 1759000000,
+      "expect": "ok"
+    },
+    {
+      "name": "v1 still verifies when only the query changed",
+      "secrets": [
+        "whsec_current"
+      ],
+      "header": "t=1759000000,v1=d6e7f8fc22461f7fdb310ea06fe9efbe32e612724457e5483e972e6ee3898a60",
+      "method": "GET",
+      "path": "/tools/orders",
+      "query": "status=closed",
+      "body": "",
+      "now": 1759000000,
+      "expect": "ok"
     }
   ]
 }
