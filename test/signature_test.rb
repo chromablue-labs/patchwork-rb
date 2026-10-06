@@ -3,18 +3,36 @@ require "test_helper"
 class SignatureTest < Minitest::Test
   include TestConfig
 
-  VECTORS = JSON.parse(File.read(File.expand_path("vectors/signature.json", __dir__)), symbolize_names: true)
+  DOCUMENT = JSON.parse(File.read(File.expand_path("vectors/signature.json", __dir__)), symbolize_names: true)
+  VECTORS = DOCUMENT[:sign]
+  VERDICTS = DOCUMENT[:verify]
 
-  def test_reproduces_every_platform_vector_byte_for_byte
+  def test_the_file_is_the_scheme_this_module_implements
+    assert_equal "patchwork-signature", DOCUMENT[:scheme]
+    assert_equal Patchwork::Signature::SKEW, DOCUMENT[:skew_seconds]
     refute_empty VECTORS
+    refute_empty VERDICTS
+  end
 
+  def test_reproduces_every_vector_byte_for_byte
     VECTORS.each do |vector|
       actual = Patchwork::Signature.sign(
         secret: vector[:secret], timestamp: vector[:timestamp],
         method: vector[:method], path: vector[:path], body: vector[:body]
       )
       assert_equal vector[:signature], actual,
-        "diverged from the platform on #{vector[:method]} #{vector[:path]}"
+        "diverged on #{vector[:name]} (#{vector[:method]} #{vector[:path]})"
+    end
+  end
+
+  def test_reaches_every_expected_verdict
+    VERDICTS.each do |vector|
+      actual = Patchwork::Signature.verify(
+        secrets: vector[:secrets], header: vector[:header],
+        method: vector[:method], path: vector[:path], body: vector[:body],
+        now: vector[:now]
+      )
+      assert_equal vector[:expect].to_sym, actual, "diverged on #{vector[:name]}"
     end
   end
 
