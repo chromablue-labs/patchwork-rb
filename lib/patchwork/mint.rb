@@ -16,11 +16,19 @@ module Patchwork
     # Verifies the presenter signature, then mints for exactly the subject in
     # the body — never a default, never a widened one. Raises InvalidSignature,
     # StaleSignature or BadRequest.
+    # `query:` is the raw query string the request arrived with. Patchwork signs
+    # the query it sends, so a mint_url that carries one needs it here or the
+    # v2 value is checked against the bare path. Pass it whenever you have it;
+    # the gateway does this for you.
     def self.relay(body:, signature:, path:, secrets: Patchwork.config.request_secrets,
-                   connection_id: Patchwork.config.connection_id)
+                   connection_id: Patchwork.config.connection_id,
+                   query: nil, labels: Signature::LABELS)
       raise BadRequest, "mint body too large" if body.to_s.bytesize > MAX_BODY_BYTES
 
-      Signature.verify!(secrets: secrets, header: signature, method: "POST", path: path, body: body)
+      Signature.verify!(
+        secrets: secrets, header: signature, method: "POST", path: path,
+        query: query, body: body, labels: labels
+      )
       token = SessionToken.issue(subject: relay_subject(body), connection_id: connection_id)
       { token: token, expires_in: Patchwork.config.token_ttl }
     end

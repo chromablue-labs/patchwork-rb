@@ -126,7 +126,8 @@ class PatchworkController < ApplicationController
     render json: Patchwork::Mint.relay(
       body: request.raw_post,
       signature: request.headers["Patchwork-Signature"],
-      path: request.path
+      path: request.path,
+      query: request.query_string
     ), status: :created
   rescue Patchwork::InvalidSignature
     head :unauthorized
@@ -140,7 +141,7 @@ Build the subject from server state, never from request params. On the direct br
 
 Set `connection_id` in your configuration when the agent has unpinned customer tools, and every minted token carries it — the direct branch, the relay branch, and the gateway. `issue` also takes `connection_id:` for a one-off. It is a connection UUID, not a name.
 
-`Mint.relay` mints for exactly the subject Patchwork sent, never a default, and verifies the signature before it reads the subject at all. `jwks` publishes the public half of your signing key, so Patchwork can verify what you minted. Set its URL on your workspace.
+`Mint.relay` mints for exactly the subject Patchwork sent, never a default, and verifies the signature before it reads the subject at all. Pass `query:` — Patchwork signs the query it sends, so a `mint_url` that carries one needs it here or the `v2` value is checked against the bare path. `labels:` works here too, if you want to require `v2`. `jwks` publishes the public half of your signing key, so Patchwork can verify what you minted. Set its URL on your workspace.
 
 If you mount the gateway in section 4, `mint_path: "/patchwork/mint"` makes it answer the relay call before your controller sees it, and you can drop `relay_mint`. Your frontend's unsigned request still reaches `mint`.
 

@@ -47,6 +47,49 @@ class MintTest < Minitest::Test
     assert_nil claims(relay)["conn"]
   end
 
+  # Patchwork signs the query it sends. A mint_url with a query therefore gets a
+  # v2 over that query, and without passing it here the v2 check misses — which
+  # went unnoticed only because v1 still matched.
+  def test_a_query_on_the_mint_url_is_covered_when_passed
+    body = JSON.generate("subject" => "usr_1:ws_1")
+    query = "tenant=acme"
+    header = Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST",
+      path: PATH, query: query, body: body
+    )
+
+    result = Patchwork::Mint.relay(body: body, signature: header, path: PATH, query: query,
+                                   labels: [ Patchwork::Signature::V2 ])
+
+    assert_equal "usr_1:ws_1", claims(result)["sub"]
+  end
+
+  def test_requiring_v2_without_the_query_is_refused
+    body = JSON.generate("subject" => "usr_1:ws_1")
+    header = Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST",
+      path: PATH, query: "tenant=acme", body: body
+    )
+
+    assert_raises(Patchwork::InvalidSignature) do
+      Patchwork::Mint.relay(body: body, signature: header, path: PATH,
+                            labels: [ Patchwork::Signature::V2 ])
+    end
+  end
+
+  def test_requiring_v2_refuses_a_v1_only_signature
+    body = JSON.generate("subject" => "usr_1:ws_1")
+    header = Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: PATH, body: body
+    )
+
+    assert_equal "usr_1:ws_1", claims(Patchwork::Mint.relay(body: body, signature: header, path: PATH))["sub"]
+    assert_raises(Patchwork::InvalidSignature) do
+      Patchwork::Mint.relay(body: body, signature: header, path: PATH,
+                            labels: [ Patchwork::Signature::V2 ])
+    end
+  end
+
   def test_refuses_a_signature_from_another_secret
     assert_raises(Patchwork::InvalidSignature) { relay(secret: "whsec_other") }
   end

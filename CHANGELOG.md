@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.8 — 2026-10-06
+
+### Added
+
+- **`Mint.relay` takes `query:` and `labels:`.** Pass the raw query string the request arrived with, and optionally restrict which signature labels count.
+
+This closes a break that was scheduled rather than visible. Patchwork signs the query it sends, so a `mint_url` carrying one gets a `v2` over that query. `Mint.relay` verified with no query, so its `v2` check missed and the call succeeded on `v1` instead — invisible today, a 401 the day `v1` retires.
+
+If your mint endpoint is a route of your own rather than the gateway's `mint_path:`, pass the query:
+
+```ruby
+Patchwork::Mint.relay(
+  body: request.raw_post,
+  signature: request.headers["Patchwork-Signature"],
+  path: request.path,
+  query: request.query_string
+)
+```
+
+The gateway already did this for you; only the standalone helper was affected.
+
 ## 0.1.7 — 2026-10-06
 
 ### Added
