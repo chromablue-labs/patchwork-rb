@@ -271,6 +271,21 @@ class GatewayTest < Minitest::Test
 
   SDK = "patchwork-rb/#{Patchwork::VERSION}".freeze
 
+  def test_requiring_v2_refuses_a_call_signed_only_with_v1
+    @options[:labels] = [ Patchwork::Signature::V2 ]
+    signed_post
+
+    assert_equal 401, last_response.status
+    assert_equal 0, @downstream_hits
+  end
+
+  def test_labels_must_name_a_known_version
+    assert_raises(ArgumentError) do
+      Patchwork::Gateway.new(->(_env) {}, resolve: ->(_s) { true }, labels: [ "v9" ])
+    end
+  end
+
+
   def test_a_verified_call_announces_the_sdk_version
     signed_post
 

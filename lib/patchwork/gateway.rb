@@ -33,7 +33,7 @@ module Patchwork
 
     def initialize(app, resolve:, subject: nil, mint_path: nil, health_check: true,
                    health_path: HealthCheck::PATH, max_body_bytes: MAX_BODY_BYTES,
-                   replay_guard: nil)
+                   replay_guard: nil, labels: Signature::LABELS)
       raise ArgumentError, "resolve must respond to #call" unless resolve.respond_to?(:call)
       raise ArgumentError, "subject must respond to #decode" if subject && !subject.respond_to?(:decode)
       raise ArgumentError, "replay_guard must respond to #call" if replay_guard && !replay_guard.respond_to?(:call)
@@ -48,6 +48,8 @@ module Patchwork
       @health_path = health_path.to_s
       @max_body_bytes = Integer(max_body_bytes)
       @replay_guard = replay_guard
+      @labels = Array(labels).map(&:to_s)
+      raise ArgumentError, "labels must name a signature version" if (@labels & Signature::LABELS).empty?
     end
 
     def call(env)
@@ -132,7 +134,8 @@ module Patchwork
         method: method,
         path: request.path,
         query: request.query_string,
-        body: body
+        body: body,
+        labels: @labels
       )
       body
     end

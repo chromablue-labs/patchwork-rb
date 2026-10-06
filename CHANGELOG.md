@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.7 — 2026-10-06
+
+### Added
+
+- **You can require `v2`.** `Signature.verify` and `verify!` take `labels:`, and the gateway takes it too. The default accepts either label, which is what the migration needs. `labels: [Patchwork::Signature::V2]` refuses a signature that does not cover the query.
+
+```ruby
+use Patchwork::Gateway,
+  resolve: ...,
+  labels: [ Patchwork::Signature::V2 ]
+```
+
+This is how a GET tool's arguments become protected before `v1` retires. The trade is that it fails against a platform still sending `v1` alone, so turn it on once you know Patchwork sends `v2` to you — which it does for every tool call, the relay mint, the connection probe and webhook deliveries.
+
+Worth being precise about what it buys. With the default, a header carrying both labels verifies through `v1` even when the query has changed, because `v1` does not cover the query. Requiring `v2` is what closes that, and a test pins exactly this difference.
+
 ## 0.1.6 — 2026-10-06
 
 ### Added

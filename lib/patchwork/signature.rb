@@ -69,8 +69,16 @@ module Patchwork
     # Accepts either label. During the migration Patchwork sends both, so a
     # reader that understands v2 must still accept v1 from a platform that has
     # not started sending it.
-    def self.verify(secrets:, header:, method:, path:, body:, query: nil, skew: SKEW, now: Time.now.to_i)
+    # `labels:` narrows what counts. The default accepts either, which is what
+    # the migration needs. Pass [V2] to refuse a signature that does not cover
+    # the query — stronger, but it fails against a platform still sending v1
+    # alone.
+    def self.verify(secrets:, header:, method:, path:, body:, query: nil, labels: LABELS,
+                    skew: SKEW, now: Time.now.to_i)
       secrets = usable!(secrets)
+      accepted = Array(labels).map(&:to_s) & LABELS
+      raise ArgumentError, "no known label to verify against" if accepted.empty?
+
       parsed = parse(header)
       return :bad if parsed.nil?
       return :stale unless fresh?(parsed, skew: skew, now: now)
@@ -78,7 +86,7 @@ module Patchwork
       # The body is hashed once however many candidates the header carries.
       body_digest = digest(body)
 
-      matched = LABELS.any? do |label|
+      matched = accepted.any? do |label|
         candidates = parsed.signatures.fetch(label, []).select { |value| HEX_SHA256.match?(value) }
         next false if candidates.empty?
 
@@ -90,9 +98,10 @@ module Patchwork
       matched ? :ok : :bad
     end
 
-    def self.verify!(secrets:, header:, method:, path:, body:, query: nil, skew: SKEW, now: Time.now.to_i)
+    def self.verify!(secrets:, header:, method:, path:, body:, query: nil, labels: LABELS,
+                     skew: SKEW, now: Time.now.to_i)
       case verify(secrets: secrets, header: header, method: method, path: path, body: body,
-                  query: query, skew: skew, now: now)
+                  query: query, labels: labels, skew: skew, now: now)
       when :stale then raise StaleSignature, "signature timestamp outside the #{skew}s window"
       when :bad then raise InvalidSignature, "signature did not match"
       else true

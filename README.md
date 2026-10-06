@@ -238,7 +238,19 @@ A signature carries a label. `v1` covers the method, the path and the raw body. 
 
 The gateway and the concern verify either label, and pass the query for you. If you verify with the primitives instead, pass `query:` — the raw query string, `request.query_string` in Rack and Rails. Leave it out and a `v2` value is checked against the bare path, which will not match.
 
-**A GET tool's arguments are still not protected yet.** Patchwork sends both labels while consumers upgrade, and `v1` does not cover the query, so altering a GET tool's arguments in flight still passes. That closes when Patchwork stops sending `v1`. Until then, give any tool whose arguments matter — ids, amounts, anything that writes — a `POST` binding, where the arguments travel in the signed body.
+**By default a GET tool's arguments are not protected yet.** Patchwork sends both labels while consumers upgrade, and `v1` does not cover the query, so a header carrying both verifies through `v1` even if the query changed.
+
+Two ways to close that:
+
+```ruby
+use Patchwork::Gateway,
+  resolve: ...,
+  labels: [ Patchwork::Signature::V2 ]
+```
+
+Requiring `v2` refuses any signature that does not cover the query. Patchwork sends `v2` on every tool call, the relay mint, the connection probe and webhook deliveries, so this is safe to turn on today. It will fail against a platform that has not started sending `v2`, which is why it is not the default.
+
+Or give any tool whose arguments matter — ids, amounts, anything that writes — a `POST` binding, where the arguments travel in the signed body.
 
 The signed path is the one your app sees. If a proxy rewrites paths before your app does, mount the gateway where the original path is still intact.
 

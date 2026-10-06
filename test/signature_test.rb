@@ -37,6 +37,47 @@ class SignatureTest < Minitest::Test
     end
   end
 
+  def both_labels(query:, secret: "whsec_current", timestamp: Time.now.to_i)
+    Patchwork::Signature.header(
+      secrets: [ secret ], timestamp: timestamp, method: "GET",
+      path: "/tools/orders", query: query, body: nil
+    )
+  end
+
+  def verdict(header, query:, labels: Patchwork::Signature::LABELS)
+    Patchwork::Signature.verify(
+      secrets: [ "whsec_current" ], header: header, method: "GET",
+      path: "/tools/orders", query: query, body: nil, labels: labels
+    )
+  end
+
+  def test_requiring_v2_refuses_a_header_that_only_carries_v1
+    header = both_labels(query: "status=open").sub(/,v2=\h{64}/, "")
+
+    assert_equal :ok, verdict(header, query: "status=open")
+    assert_equal :bad, verdict(header, query: "status=open", labels: [ Patchwork::Signature::V2 ])
+  end
+
+  def test_requiring_v2_still_refuses_a_query_that_changed
+    header = both_labels(query: "status=open")
+
+    assert_equal :ok, verdict(header, query: "status=open", labels: [ Patchwork::Signature::V2 ])
+    assert_equal :bad, verdict(header, query: "status=closed", labels: [ Patchwork::Signature::V2 ])
+  end
+
+  # Without this, requiring v2 would be satisfied by the v1 value in the header.
+  def test_requiring_v2_does_not_fall_back_to_v1_when_the_query_changed
+    header = both_labels(query: "status=open")
+
+    assert_equal :ok, verdict(header, query: "status=closed"),
+      "the default accepts either label, and v1 does not cover the query"
+    assert_equal :bad, verdict(header, query: "status=closed", labels: [ Patchwork::Signature::V2 ])
+  end
+
+  def test_an_unknown_label_cannot_be_required
+    assert_raises(ArgumentError) { verdict(both_labels(query: "a=1"), query: "a=1", labels: [ "v9" ]) }
+  end
+
   def test_method_case_does_not_change_the_signature
     lower = VECTORS.find { |v| v[:method] == "post" }
     skip "no lowercase vector" if lower.nil?
