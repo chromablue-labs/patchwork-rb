@@ -248,7 +248,7 @@ use Patchwork::Gateway,
   labels: [ Patchwork::Signature::V2 ]
 ```
 
-Requiring `v2` refuses any signature that does not cover the query. Patchwork sends `v2` on every tool call, the relay mint, the connection probe and webhook deliveries, so this is safe to turn on today. It will fail against a platform that has not started sending `v2`, which is why it is not the default.
+Requiring `v2` refuses any signature that does not cover the query. Patchwork sends `v2` on every signed call — tool calls, a patch dry run, the relay mint, the connection probe and webhook deliveries — so this is safe to turn on today. It will fail against a platform that has not started sending `v2`, which is why it is not the default.
 
 Or give any tool whose arguments matter — ids, amounts, anything that writes — a `POST` binding, where the arguments travel in the signed body.
 
