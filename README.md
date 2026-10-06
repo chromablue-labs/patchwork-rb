@@ -232,7 +232,11 @@ Failure behaviour:
 
 ### What the signature does and doesn't cover
 
-The signature covers the method, the path and the raw body, as specified in the [Signing guide](https://docs.usepatchwork.co/guides/signing). **It does not cover the query string**, and Patchwork sends a GET tool's arguments as query parameters. So a GET tool's arguments are not integrity-protected. Anyone who can alter a request in flight (a TLS-terminating proxy, for example) can change them without breaking the signature. Give any tool whose arguments matter, such as ids, amounts or anything that writes, a `POST` binding, where the arguments travel in the signed body.
+A signature carries a label. `v1` covers the method, the path and the raw body. `v2` covers the same with the query string, exactly as sent. The scheme is specified in the [Signing guide](https://docs.usepatchwork.co/guides/signing).
+
+The gateway and the concern verify either label, and pass the query for you. If you verify with the primitives instead, pass `query:` — the raw query string, `request.query_string` in Rack and Rails. Leave it out and a `v2` value is checked against the bare path, which will not match.
+
+**A GET tool's arguments are still not protected yet.** Patchwork sends both labels while consumers upgrade, and `v1` does not cover the query, so altering a GET tool's arguments in flight still passes. That closes when Patchwork stops sending `v1`. Until then, give any tool whose arguments matter — ids, amounts, anything that writes — a `POST` binding, where the arguments travel in the signed body.
 
 The signed path is the one your app sees. If a proxy rewrites paths before your app does, mount the gateway where the original path is still intact.
 

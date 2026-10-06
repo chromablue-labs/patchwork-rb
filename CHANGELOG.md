@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.5 — 2026-10-06
+
+### Added
+
+- **`v2` signatures, which cover the query string.** `v1` covers the method, the path and the body, so a GET tool's arguments ride in the query with no integrity protection. `v2` covers the same with the query exactly as sent. `Signature.verify` accepts either label, and the gateway and `Rails::Presented` pass the query for you.
+
+Patchwork sends both labels during the migration, so this release changes nothing you can observe: a `v1` signature still verifies. Protection for a GET tool's arguments arrives when Patchwork stops sending `v1`.
+
+Two decisions behind it:
+
+- The `v2` payload carries a `v2.` prefix. Without it the two labels would cover identical bytes for a request with no query, and one signature could read as the other.
+- `v2` signs the query byte for byte, with no sorting and no re-encoding. This gem already verifies the raw body rather than a re-serialised form, and a normalisation rule is the part that drifts between two implementations. The same parameters in another order are a different signature.
+
+If you verify with the primitives rather than the gateway, pass `query:` to `Signature.verify` — the raw query string, which is `request.query_string` in Rack and Rails. Leave it out and a `v2` value is checked against the bare path, which will not match.
+
+### Changed
+
+- An unknown label in the header is ignored rather than refused, so a later label cannot break this version. A header carrying only an unknown label is still refused.
+
 ## 0.1.4 — 2026-10-05
 
 ### Added
