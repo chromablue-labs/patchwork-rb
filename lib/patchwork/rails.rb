@@ -45,6 +45,7 @@ module Patchwork
         @patchwork_subject = result.subject
         @patchwork_claims = result.claims
         @patchwork_principal = result.principal
+        response.headers[::Patchwork::SDK_HEADER] = ::Patchwork::SDK
       rescue ::Patchwork::StaleSignature
         deny_patchwork_call("stale signature")
       rescue ::Patchwork::InvalidSignature

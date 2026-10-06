@@ -63,7 +63,7 @@ module Patchwork
       return relay_mint(request, signature) if @mint_path && at?(request, @mint_path) && request.post?
 
       authenticate!(env, request, signature)
-      @app.call(env)
+      announce(@app.call(env))
     rescue TooLarge
       json(413, { error: "request body too large" })
     rescue InvalidSignature
@@ -177,9 +177,20 @@ module Patchwork
       json(401, { error: message })
     end
 
+    # Only a verified call gets the header. A request that fell through carries
+    # the consumer's own traffic, and Patchwork is not reading it.
+    def announce(response)
+      status, headers, body = response
+      [ status, headers.merge(SDK_HEADER => SDK), body ]
+    end
+
     def json(status, payload)
       body = JSON.generate(payload)
-      [ status, { "content-type" => "application/json", "content-length" => body.bytesize.to_s }, [ body ] ]
+      [ status, {
+        "content-type" => "application/json",
+        "content-length" => body.bytesize.to_s,
+        SDK_HEADER => SDK
+      }, [ body ] ]
     end
   end
 end

@@ -13,6 +13,14 @@ require "patchwork/mint"
 require "patchwork/bridge_assertion"
 
 module Patchwork
+  # Announced on a response to a verified Patchwork call, so the platform can
+  # tell which version a workspace runs and retire an old signature label on
+  # evidence rather than a guess. Lowercase, as Rack 3 requires.
+  SDK_HEADER = "patchwork-sdk".freeze
+  SDK = "patchwork-rb/#{VERSION}".freeze
+end
+
+module Patchwork
   class << self
     def config
       @config ||= Configuration.new

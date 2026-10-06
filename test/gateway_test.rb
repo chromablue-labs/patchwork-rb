@@ -269,6 +269,31 @@ class GatewayTest < Minitest::Test
     end
   end
 
+  SDK = "patchwork-rb/#{Patchwork::VERSION}".freeze
+
+  def test_a_verified_call_announces_the_sdk_version
+    signed_post
+
+    assert_equal 200, last_response.status
+    assert_equal SDK, last_response.headers[Patchwork::SDK_HEADER]
+  end
+
+  def test_a_request_that_falls_through_announces_nothing
+    post "/api/tools/lookup", '{"q":1}'
+
+    assert_equal 1, @downstream_hits
+    assert_nil last_response.headers[Patchwork::SDK_HEADER],
+      "an unsigned request is the consumer's own traffic, not Patchwork's"
+  end
+
+  def test_a_refusal_still_announces_the_version
+    signed_post(secret: "wrong-secret")
+
+    assert_equal 401, last_response.status
+    assert_equal SDK, last_response.headers[Patchwork::SDK_HEADER],
+      "a version is worth knowing even when verification failed"
+  end
+
   MINT_PATH = "/patchwork/mint".freeze
 
   def mint_through_gateway(subject: "usr_1:ws_1")

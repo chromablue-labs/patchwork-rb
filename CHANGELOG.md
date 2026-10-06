@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6 — 2026-10-06
+
+### Added
+
+- **A verified call answers with `Patchwork-Sdk: patchwork-rb/<version>`.** The gateway sets it on a call it verified and on its own replies, and `Rails::Presented` sets it on a verified call. A request that falls through to your own auth does not get it, because that is your traffic rather than Patchwork's.
+
+It exists so Patchwork can tell which version a workspace runs. Retiring the `v1` signature label breaks a consumer that only reads `v1`, and without this there is no way to know whether any are left, so the decision would be a guess. Nothing about your integration changes, and the header carries a version and nothing else.
+
+A refused call announces it too. A version is worth knowing even when verification failed.
+
 ## 0.1.5 — 2026-10-06
 
 ### Added

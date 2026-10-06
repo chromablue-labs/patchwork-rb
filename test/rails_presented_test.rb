@@ -22,6 +22,12 @@ class RailsPresentedTest < Minitest::Test
     attr_accessor :request
     attr_reader :rendered
 
+    FakeResponse = Struct.new(:headers)
+
+    def response
+      @response ||= FakeResponse.new({})
+    end
+
     def render(**payload)
       @rendered = payload
     end
@@ -83,6 +89,18 @@ class RailsPresentedTest < Minitest::Test
 
   def test_the_concern_registers_the_before_action
     assert_includes ToolsController.registered, :verify_patchwork_call!
+  end
+
+  def test_a_verified_call_announces_the_sdk_version
+    controller = call(ToolsController)
+
+    assert_equal "patchwork-rb/#{Patchwork::VERSION}", controller.response.headers[Patchwork::SDK_HEADER]
+  end
+
+  def test_a_refused_call_announces_nothing
+    controller = call(ToolsController, secret: "wrong")
+
+    assert_nil controller.response.headers[Patchwork::SDK_HEADER]
   end
 
   def test_a_valid_call_resolves_a_principal_and_renders_nothing

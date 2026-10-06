@@ -213,6 +213,8 @@ use Patchwork::Gateway, resolve: ->(subject, claims) {
 
 `resolve` can take `(subject)` or `(subject, claims)`. Any object that responds to `call` works.
 
+A verified call answers with `Patchwork-Sdk: patchwork-rb/<version>`, so Patchwork can tell which version you run and retire an old signature label on evidence rather than a guess. A request that falls through to your own auth does not carry it.
+
 After a successful call, the request env carries:
 
 | Key | Value |
