@@ -383,7 +383,7 @@ All of them except `ArgumentError` inherit from `Patchwork::Error`. None of them
 The primitives are public if you need to sign or verify outside Rack:
 
 ```ruby
-Patchwork::Signature.header(secrets: [secret], timestamp: Time.now.to_i, method: "POST", path: "/v1/runs", body: body)
+Patchwork::Signature.header(secrets: [secret], timestamp: Time.now.to_i, method: "POST", path: "/v1/runs", body: body, query: nil)
 Patchwork::Signature.verify!(secrets: [current, previous], header: header, method: "POST", path: path, body: raw_body)
 Patchwork::SessionToken.verify(token)   # => claims, or raises Patchwork::InvalidToken
 ```

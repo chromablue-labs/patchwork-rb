@@ -273,10 +273,23 @@ class GatewayTest < Minitest::Test
 
   def test_requiring_v2_refuses_a_call_signed_only_with_v1
     @options[:labels] = [ Patchwork::Signature::V2 ]
-    signed_post
+    body = '{"q":1}'
+    header "Patchwork-Signature", Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST",
+      path: "/api/tools/lookup", body: body, labels: [ Patchwork::Signature::V1 ]
+    )
+    header "Authorization", "Bearer #{Patchwork::SessionToken.issue(subject: "usr_1:ws_1")}"
+    post "/api/tools/lookup", body
 
     assert_equal 401, last_response.status
     assert_equal 0, @downstream_hits
+  end
+
+  def test_the_default_signature_a_consumer_sees_carries_v2
+    signed_post
+
+    assert_equal 200, last_response.status
+    assert_includes last_request.env["HTTP_PATCHWORK_SIGNATURE"], "v2="
   end
 
   def test_labels_must_name_a_known_version

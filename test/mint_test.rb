@@ -80,7 +80,8 @@ class MintTest < Minitest::Test
   def test_requiring_v2_refuses_a_v1_only_signature
     body = JSON.generate("subject" => "usr_1:ws_1")
     header = Patchwork::Signature.header(
-      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: PATH, body: body
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: PATH, body: body,
+      labels: [ Patchwork::Signature::V1 ]
     )
 
     assert_equal "usr_1:ws_1", claims(Patchwork::Mint.relay(body: body, signature: header, path: PATH))["sub"]

@@ -29,8 +29,10 @@ module Patchwork
       mac(secret, payload(label, timestamp, method, path, query, digest(body)))
     end
 
-    def self.header(secrets:, timestamp:, method:, path:, body:, query: nil, labels: nil)
-      labels = (labels || (query.nil? ? [ V1 ] : LABELS)).map(&:to_s)
+    # Emits v2, which is what Patchwork sends. v1 is retired; pass
+    # labels: [V1] if you need to produce one for a test.
+    def self.header(secrets:, timestamp:, method:, path:, body:, query: nil, labels: [ V2 ])
+      labels = Array(labels).map(&:to_s)
       usable = usable!(secrets)
 
       values = labels.flat_map do |label|

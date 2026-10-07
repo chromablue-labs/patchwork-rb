@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10 — 2026-10-07
+
+### Changed
+
+- **`Signature.header` emits `v2`.** It emitted `v1` whenever no `query:` was given, so the helper produced the retired label while 0.1.9's README said nothing did. Pass `labels: [Patchwork::Signature::V1]` if you need one, which is mostly a test concern.
+
+This affects only the signing helper. Verification is unchanged and still accepts either label, and nothing about how you verify Patchwork's requests moves.
+
 ## 0.1.9 — 2026-10-07
 
 Documentation. No code changes.

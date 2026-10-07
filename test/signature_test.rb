@@ -37,10 +37,13 @@ class SignatureTest < Minitest::Test
     end
   end
 
+  # Patchwork no longer sends v1, but a verifier still has to handle a header
+  # that carries both — anything signed by an older platform, and the migration
+  # these tests describe. Ask for both explicitly.
   def both_labels(query:, secret: "whsec_current", timestamp: Time.now.to_i)
     Patchwork::Signature.header(
       secrets: [ secret ], timestamp: timestamp, method: "GET",
-      path: "/tools/orders", query: query, body: nil
+      path: "/tools/orders", query: query, body: nil, labels: Patchwork::Signature::LABELS
     )
   end
 
@@ -72,6 +75,25 @@ class SignatureTest < Minitest::Test
     assert_equal :ok, verdict(header, query: "status=closed"),
       "the default accepts either label, and v1 does not cover the query"
     assert_equal :bad, verdict(header, query: "status=closed", labels: [ Patchwork::Signature::V2 ])
+  end
+
+  def test_header_emits_v2_and_not_the_retired_label
+    header = Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: "/hooks", body: "{}"
+    )
+
+    assert_includes header, "v2="
+    refute_includes header, "v1=", "v1 is retired; ask for it explicitly if a test needs one"
+  end
+
+  def test_header_can_still_produce_v1_on_request
+    header = Patchwork::Signature.header(
+      secrets: [ "whsec_current" ], timestamp: Time.now.to_i, method: "POST", path: "/hooks", body: "{}",
+      labels: [ Patchwork::Signature::V1 ]
+    )
+
+    assert_includes header, "v1="
+    refute_includes header, "v2="
   end
 
   def test_an_unknown_label_cannot_be_required
@@ -122,12 +144,12 @@ class SignatureTest < Minitest::Test
     assert_equal :ok, verify(header, secrets: [ "new", "old" ])
   end
 
-  def test_a_rotation_header_carries_every_v1_not_just_the_last
+  def test_a_rotation_header_carries_every_value_not_just_the_last
     header = sign_header([ "new", "old" ])
 
-    assert_equal 2, header.scan("v1=").size
+    assert_equal 2, header.scan("v2=").size
     assert_equal :ok, verify(header, secrets: [ "new" ]),
-      "parsing the header into a Hash keeps only the last v1 and silently breaks the rotation overlap"
+      "parsing the header into a Hash keeps only the last value and silently breaks the rotation overlap"
   end
 
   def test_rejects_when_neither_rotation_secret_matches
