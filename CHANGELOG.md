@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.9 — 2026-10-07
+
+Documentation. No code changes.
+
+**Patchwork has retired the `v1` signature label.** It now signs only `v2`, which covers the query string, so a GET tool's arguments are protected without you configuring anything. The README said the opposite, because it was written while both labels were on the wire.
+
+This gem still accepts a `v1` value if one arrives. That is harmless: nothing emits one, and nobody can produce one without your request secret. `labels: [Patchwork::Signature::V2]` refuses it anyway if you prefer.
+
+Nothing to do on upgrade.
+
 ## 0.1.8 — 2026-10-06
 
 ### Added

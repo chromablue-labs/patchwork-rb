@@ -567,7 +567,7 @@
       "expect": "ok"
     },
     {
-      "name": "v1 still verifies when only the query changed",
+      "name": "an arriving v1 is still accepted, though nothing sends one",
       "secrets": [
         "whsec_current"
       ],

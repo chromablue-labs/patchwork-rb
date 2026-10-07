@@ -235,23 +235,19 @@ Failure behaviour:
 
 ### What the signature does and doesn't cover
 
-A signature carries a label. `v1` covers the method, the path and the raw body. `v2` covers the same with the query string, exactly as sent. The scheme is specified in the [Signing guide](https://docs.usepatchwork.co/guides/signing).
+A signature carries a label. `v2` covers the method, the path **with the query string exactly as sent**, and the raw body. The scheme is specified in the [Signing guide](https://docs.usepatchwork.co/guides/signing).
 
 The gateway and the concern verify either label, and pass the query for you. If you verify with the primitives instead, pass `query:` — the raw query string, `request.query_string` in Rack and Rails. Leave it out and a `v2` value is checked against the bare path, which will not match.
 
-**By default a GET tool's arguments are not protected yet.** Patchwork sends both labels while consumers upgrade, and `v1` does not cover the query, so a header carrying both verifies through `v1` even if the query changed.
+**A GET tool's arguments are covered.** Patchwork signs the query on every signed call — tool calls, a patch dry run, the relay mint, the connection probe and webhook deliveries — so a request whose arguments were changed in flight does not verify. You get this without configuring anything.
 
-Two ways to close that:
+An earlier label, `v1`, covered the path without the query. Patchwork no longer sends it. This gem still accepts one if it arrives, which is harmless because nothing emits one and nobody can produce one without your request secret. To refuse it anyway:
 
 ```ruby
 use Patchwork::Gateway,
   resolve: ...,
   labels: [ Patchwork::Signature::V2 ]
 ```
-
-Requiring `v2` refuses any signature that does not cover the query. Patchwork sends `v2` on every signed call — tool calls, a patch dry run, the relay mint, the connection probe and webhook deliveries — so this is safe to turn on today. It will fail against a platform that has not started sending `v2`, which is why it is not the default.
-
-Or give any tool whose arguments matter — ids, amounts, anything that writes — a `POST` binding, where the arguments travel in the signed body.
 
 The signed path is the one your app sees. If a proxy rewrites paths before your app does, mount the gateway where the original path is still intact.
 
